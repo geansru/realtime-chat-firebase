@@ -24,6 +24,14 @@ class LoginViewController: UIViewController {
             }
         }
     }
-
+    
+    // MARK: Navigation
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        super.prepareForSegue(segue, sender: sender)
+        guard let nav = segue.destinationViewController as? UINavigationController else {  return }
+        guard let dst = nav.topViewController as? ChatViewController else {  return }
+        dst.senderId = ref.authData.uid
+        dst.senderDisplayName = "Anonymous"
+    }
 }
 
