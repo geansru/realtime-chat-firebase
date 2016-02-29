@@ -5,9 +5,22 @@ import JSQMessagesViewController
 class ChatViewController: JSQMessagesViewController {
 
     // private properties
+    private var userTypingQuery: FQuery!
     private var messages: [JSQMessage] = []
     private var outgoingBubbleImageView: JSQMessagesBubbleImage!
     private var incomingBubbleImageView: JSQMessagesBubbleImage!
+    private var localTyping = false
+    
+    var userIsTypingRef: Firebase!
+    var isTyping: Bool {
+        get {
+            return localTyping
+        }
+        set {
+            localTyping = newValue
+            userIsTypingRef.setValue(newValue)
+        }
+    }
     
     // MARK: Lifecycle
     override func viewDidLoad() {
@@ -21,6 +34,7 @@ class ChatViewController: JSQMessagesViewController {
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
         observeMessages()
+        observeTyping()
     }
   
     // Collection Data Source delegate
@@ -65,6 +79,11 @@ class ChatViewController: JSQMessagesViewController {
         JSQSystemSoundPlayer.jsq_playMessageSentSound()
         finishSendingMessage()
     }
+
+    override func textViewDidChange(textView: UITextView) {
+        super.textViewDidChange(textView)
+        isTyping = !textView.text.isEmpty
+    }
     // Helpers
     private func setupBubbles() {
         let factory = JSQMessagesBubbleImageFactory()
@@ -82,6 +101,22 @@ class ChatViewController: JSQMessagesViewController {
             let text = snapshot.value["text"] as? String ?? ""
             self.addMessage(id, text: text)
             self.finishSendingMessage()
+        }
+    }
+    private func observeTyping() {
+        let typingRef = FirebaseHelper.shared.rootRef.childByAppendingPath("typingIndicator")
+        userIsTypingRef = typingRef.childByAppendingPath(senderId)
+        userIsTypingRef.onDisconnectRemoveValue()
+        
+        userTypingQuery = typingRef.queryOrderedByValue().queryEqualToValue(true)
+        userTypingQuery.observeEventType(FEventType.Value) { (snapshot: FDataSnapshot!) -> Void in
+            if snapshot.childrenCount == 1 && self.isTyping {
+                return // You're the only typing, don't show the indicator
+            }
+            
+            // Are there others typing
+            self.showTypingIndicator = snapshot.childrenCount > 0
+            self.scrollToBottomAnimated(true)
         }
     }
 }
