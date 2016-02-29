@@ -14,14 +14,8 @@ class ChatViewController: JSQMessagesViewController {
         super.viewDidLoad()
         title = "ChatChat"
         setupBubbles()
-    }
-
-    override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-
-    override func viewDidDisappear(animated: Bool) {
-        super.viewDidDisappear(animated)
+        collectionView?.collectionViewLayout.incomingAvatarViewSize = CGSizeZero
+        collectionView?.collectionViewLayout.outgoingAvatarViewSize = CGSizeZero
     }
   
     // Collection Data Source delegate
@@ -40,6 +34,10 @@ class ChatViewController: JSQMessagesViewController {
     
     override func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return messages.count
+    }
+    
+    override func collectionView(collectionView: JSQMessagesCollectionView!, avatarImageDataForItemAtIndexPath indexPath: NSIndexPath!) -> JSQMessageAvatarImageDataSource! {
+        return nil
     }
     
     // Helper
