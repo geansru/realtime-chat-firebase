@@ -17,6 +17,11 @@ class ChatViewController: JSQMessagesViewController {
         collectionView?.collectionViewLayout.incomingAvatarViewSize = CGSizeZero
         collectionView?.collectionViewLayout.outgoingAvatarViewSize = CGSizeZero
     }
+    
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+        observeMessages()
+    }
   
     // Collection Data Source delegate
     override func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
@@ -60,7 +65,7 @@ class ChatViewController: JSQMessagesViewController {
         JSQSystemSoundPlayer.jsq_playMessageSentSound()
         finishSendingMessage()
     }
-    // Helper
+    // Helpers
     private func setupBubbles() {
         let factory = JSQMessagesBubbleImageFactory()
         outgoingBubbleImageView = factory.outgoingMessagesBubbleImageWithColor(UIColor.jsq_messageBubbleBlueColor())
@@ -69,5 +74,14 @@ class ChatViewController: JSQMessagesViewController {
     private func addMessage(id: String, text: String) {
         let message = JSQMessage(senderId: id, displayName: "", text: text)
         messages.append(message)
+    }
+    private func observeMessages() {
+        let messagesQuery = FirebaseHelper.shared.messagesRef.queryLimitedToLast(25)
+        messagesQuery.observeEventType(.ChildAdded) { (snapshot: FDataSnapshot!) -> Void in
+            let id = snapshot.value["senderId"] as? String ?? ""
+            let text = snapshot.value["text"] as? String ?? ""
+            self.addMessage(id, text: text)
+            self.finishSendingMessage()
+        }
     }
 }
